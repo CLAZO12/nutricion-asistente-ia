@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nutricion Asistente IA</title>
+  <style>
+    :root {
+      --primary: #0d6efd;
+      --secondary: #ff4f9a;
+      --bg: #f4f8ff;
+      --text: #1f2a37;
+      --ok: #218838;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: linear-gradient(135deg, var(--primary), #3c9dff);
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 4px 0; }
+    .container {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 12px;
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    }
+    h2 { margin-top: 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 10px;
+    }
+    .module {
+      border: 1px solid #d8e6ff;
+      border-radius: 8px;
+      padding: 10px;
+      background: #f8fbff;
+    }
+    label { display: block; margin: 8px 0 4px; font-weight: 700; }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #c7d5eb;
+      border-radius: 7px;
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+    button.secondary { background: var(--secondary); }
+    button.ghost { background: #6c757d; }
+    button.ok { background: var(--ok); }
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 10px; }
+    .msg { margin-top: 8px; padding: 10px; border-radius: 8px; font-weight: 700; }
+    .msg.ok { background: #d1f0db; color: #0f5132; }
+    .msg.error { background: #f8d7da; color: #842029; }
+    .small { font-size: 0.9rem; color: #394b67; }
+    .chat-box {
+      height: 200px;
+      overflow: auto;
+      border: 1px solid #d8e1ef;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f9fcff;
+    }
+    .bubble { margin: 6px 0; padding: 8px; border-radius: 8px; }
+    .user { background: #dce9ff; }
+    .bot { background: #ebf7e7; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: .92rem;
+    }
+    th, td { border: 1px solid #d7dfeb; padding: 6px; text-align: left; }
+    #closingScreen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 1000;
+      background: linear-gradient(180deg, #000 0%, #000 45%, #ff4f9a 100%);
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+    .sport-boys-logo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff9cc7, #ff4f9a 60%, #b0005c);
+      border: 4px solid #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍏 Nutricion Asistente IA</h1>
+    <p><strong>Área de Calidad</strong></p>
+    <p>Servicio de Nutrición del Hospital HNERM</p>
+    <p>© 2026 NutriHuacho.Corp</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>📚 Módulos de Capacitación</h2>
+      <div class="grid" id="modulesGrid"></div>
+      <p class="small">Fuentes incluidas: normas técnicas, resoluciones y lineamientos DIGESA/MINSA (nacional e internacional).</p>
+    </section>
+
+    <section class="card">
+      <h2>📝 Registro de Asistencia</h2>
+      <div class="row">
+        <div>
+          <label for="fullName">Nombre y apellido completo</label>
+          <input id="fullName" maxlength="120" required />
+        </div>
+        <div>
+          <label for="role">Tipo</label>
+          <select id="role">
+            <option value="Tecnico">Técnico</option>
+            <option value="Asistente">Asistente</option>
+          </select>
+        </div>
+        <div>
+          <label for="area">Área donde labora</label>
+          <input id="area" maxlength="80" required />
+        </div>
+        <div>
+          <label for="phone">Celular (PIN de ingreso)</label>
+          <input id="phone" maxlength="9" inputmode="numeric" placeholder="9 dígitos" required />
+        </div>
+        <div>
+          <label for="accessPin">PIN especial (solo si admin lo entrega)</label>
+          <input id="accessPin" maxlength="8" placeholder="Opcional" />
+        </div>
+      </div>
+      <button id="registerBtn">Registrar asistencia</button>
+      <div id="registerMsg"></div>
+    </section>
+
+    <section class="card">
+      <h2>✅ Progreso y Examen Final</h2>
+      <p class="small">Marque módulos completados y rinda examen antes de emitir certificado.</p>
+      <div id="moduleChecks" class="grid"></div>
+      <button id="gradeExamBtn" class="ok">Calificar examen</button>
+      <div id="examMsg"></div>
+      <div id="examBox"></div>
+    </section>
+
+    <section class="card">
+      <h2>🏅 Certificado</h2>
+      <div id="certificatePreview" class="small">Aún no generado.</div>
+      <button id="downloadCertificateBtn">Descargar certificado PDF</button>
+      <p class="small">Logos: NutriHuacho.Corp y Área de Calidad (Supervisor(a)).</p>
+      <p class="small"><strong>Elaborado por:</strong> Lic. Carlos Paul Bazo Quesquen, CNP 5937, correo: carlosp.bazo@gmail.com, celular: 992341818.</p>
+    </section>
+
+    <section class="card">
+      <h2>🤖 Nutribot</h2>
+      <p class="small">Responde sobre calidad, inocuidad y nutrición. También puede generar imágenes si el alumno lo solicita.</p>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="row">
+        <div><input id="chatInput" placeholder="Escribe tu consulta" /></div>
+        <div><button id="sendChatBtn">Enviar consulta</button></div>
+      </div>
+      <div id="imageResult"></div>
+    </section>
+
+    <section class="card">
+      <h2>🎮 Extras: Trivia rápida</h2>
+      <div id="triviaBox"></div>
+      <button id="gradeTriviaBtn" class="secondary">Calificar trivia</button>
+      <div id="triviaMsg"></div>
+    </section>
+
+    <section class="card">
+      <h2>🔐 Panel Administrador</h2>
+      <p class="small">Acceso local con PIN funcional solicitado: 1206.</p>
+      <label for="adminPin">PIN administrador</label>
+      <input id="adminPin" maxlength="4" placeholder="Ingrese 1206" />
+      <button id="unlockAdminBtn">Ingresar</button>
+      <div id="adminPanel" style="display:none; margin-top:12px;">
+        <p class="small">Generar PIN de reingreso para celular bloqueado:</p>
+        <div class="row">
+          <div><input id="pinPhone" placeholder="Celular" maxlength="9" /></div>
+          <div><button id="generatePinBtn" class="ghost">Generar PIN</button></div>
+        </div>
+        <div id="pinMsg"></div>
+        <button id="downloadReportBtn">Descargar lista de asistencia + notas (CSV)</button>
+        <table>
+          <thead><tr><th>Nombre completo</th><th>Tipo</th><th>Área</th><th>Celular</th><th>Nota</th></tr></thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <button id="closeAppBtn" class="secondary">Cerrar aplicativo</button>
+    </section>
+  </main>
+
+  <div id="closingScreen">
+    <div>
+      <div class="sport-boys-logo">SPORT BOYS</div>
+      <h2>En memoria de GianCarlo</h2>
+      <p>Primo, compadre, hermano y amigo, siempre estarás en mi corazón.</p>
+    </div>
+  </div>
+
+  <script>
+    const modules = [
+      { icon: '🧼', name: 'Calidad e inocuidad alimentaria', source: 'R.M. 591-2008/MINSA, Codex Alimentarius' },
+      { icon: '📏', name: 'Normas técnicas sanitarias', source: 'NTS DIGESA/MINSA y lineamientos institucionales' },
+      { icon: '🧪', name: 'Control de procesos y auditoría', source: 'ISO 22000, HACCP y resoluciones internas' },
+      { icon: '🥗', name: 'Nutrición clínica y general', source: 'Guías alimentarias nacionales e internacionales' }
+    ];
+
+    const examQuestions = [
+      { q: '¿Qué sistema es clave para control de peligros en alimentos?', a: 'haccp' },
+      { q: '¿Entidad sanitaria nacional relacionada al control alimentario?', a: 'digesa' },
+      { q: '¿Norma internacional de gestión de inocuidad?', a: 'iso 22000' },
+      { q: '¿Qué debe registrarse para auditoría?', a: 'asistencia y notas' },
+      { q: '¿Primero antes del certificado?', a: 'examen final' }
+    ];
+
+    const triviaQuestions = [
+      { q: 'Lavado de manos mínimo recomendado (segundos):', a: '20' },
+      { q: 'Palabra clave para prevenir contaminación cruzada:', a: 'separación' },
+      { q: 'Micronutriente relacionado con la anemia:', a: 'hierro' }
+    ];
+
+    const PASSING_SCORE = 70;
+    const PHONE_REGEX = /^\d{9}$/;
+    const byId = (id) => document.getElementById(id);
+    const safe = (v) => (v || '').trim();
+    const normalizeAndRemoveDiacritics = (v) => safe(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalizeAnswer = (v) => normalizeAndRemoveDiacritics(v).replace(/\s+/g, ' ').trim();
+    const safeJsonParse = (key, fallback) => {
+      try {
+        return JSON.parse(localStorage.getItem(key) || fallback);
+      } catch {
+        return JSON.parse(fallback);
+      }
+    };
+
+    const storage = {
+      getAttendance: () => safeJsonParse('attendance', '[]'),
+      setAttendance: (v) => localStorage.setItem('attendance', JSON.stringify(v)),
+      getPins: () => safeJsonParse('specialPins', '{}'),
+      setPins: (v) => localStorage.setItem('specialPins', JSON.stringify(v)),
+      getScores: () => safeJsonParse('scores', '{}'),
+      setScores: (v) => localStorage.setItem('scores', JSON.stringify(v))
+    };
+
+    function renderModules() {
+      const grid = byId('modulesGrid');
+      const checks = byId('moduleChecks');
+      modules.forEach((m, i) => {
+        const card = document.createElement('div');
+        card.className = 'module';
+        card.innerHTML = `<strong>${m.icon} ${m.name}</strong><br><span class="small">Fuente: ${m.source}</span>`;
+        grid.appendChild(card);
+
+        const box = document.createElement('label');
+        box.className = 'module';
+        box.innerHTML = `<input type="checkbox" data-module="${i}" style="width:auto; margin-right:8px;"> Completé: ${m.name}`;
+        checks.appendChild(box);
+      });
+    }
+
+    function renderExam() {
+      const examBox = byId('examBox');
+      examQuestions.forEach((item, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'module';
+        wrap.innerHTML = `<strong>${i + 1}. ${item.q}</strong><input id="exam-${i}" placeholder="Respuesta" />`;
+        examBox.appendChild(wrap);
+      });
+    }
+
+    function renderTrivia() {
+      const box = byId('triviaBox');
+      triviaQuestions.forEach((item, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'module';
+        wrap.innerHTML = `<strong>${i + 1}. ${item.q}</strong><input id="trivia-${i}" placeholder="Respuesta" />`;
+        box.appendChild(wrap);
+      });
+    }
+
+    function showMsg(containerId, text, ok) {
+      const node = byId(containerId);
+      node.className = `msg ${ok ? 'ok' : 'error'}`;
+      node.textContent = text;
+    }
+
+    function refreshAttendanceTable() {
+      const tbody = byId('attendanceTable');
+      tbody.innerHTML = '';
+      const attendance = storage.getAttendance();
+      const scores = storage.getScores();
+      attendance.forEach(p => {
+        const tr = document.createElement('tr');
+        ['name', 'role', 'area', 'phone'].forEach(k => {
+          const td = document.createElement('td');
+          td.textContent = p[k];
+          tr.appendChild(td);
+        });
+        const scoreTd = document.createElement('td');
+        scoreTd.textContent = scores[p.phone] ?? 'Pendiente';
+        tr.appendChild(scoreTd);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function currentParticipantPhone() {
+      return safe(byId('phone').value);
+    }
+
+    byId('registerBtn').addEventListener('click', () => {
+      const name = safe(byId('fullName').value);
+      const role = safe(byId('role').value);
+      const area = safe(byId('area').value);
+      const phone = safe(byId('phone').value);
+      const accessPin = safe(byId('accessPin').value);
+
+      if (!name || !area || !PHONE_REGEX.test(phone)) {
+        showMsg('registerMsg', 'Complete datos válidos. El celular debe tener 9 dígitos.', false);
+        return;
+      }
+
+      const attendance = storage.getAttendance();
+      const pins = storage.getPins();
+      const existing = attendance.find(p => p.phone === phone);
+      const validSpecialPin = pins[phone] && pins[phone] === accessPin;
+
+      if (existing && !validSpecialPin) {
+        showMsg('registerMsg', 'Este celular ya fue registrado. Solicite PIN especial al administrador.', false);
+        return;
+      }
+
+      if (!existing) {
+        attendance.push({ name, role, area, phone, date: new Date().toISOString() });
+      }
+
+      if (validSpecialPin) {
+        delete pins[phone];
+        storage.setPins(pins);
+      }
+
+      storage.setAttendance(attendance);
+      refreshAttendanceTable();
+      showMsg('registerMsg', 'Asistencia registrada correctamente.', true);
+    });
+
+    byId('gradeExamBtn').addEventListener('click', () => {
+      const phone = currentParticipantPhone();
+      if (!PHONE_REGEX.test(phone)) {
+        showMsg('examMsg', 'Ingrese su celular registrado para asociar la nota.', false);
+        return;
+      }
+
+      const completedModules = [...document.querySelectorAll('[data-module]')].every(c => c.checked);
+      if (!completedModules) {
+        showMsg('examMsg', 'Debe completar todos los módulos antes del examen final.', false);
+        return;
+      }
+
+      let score = 0;
+      examQuestions.forEach((item, i) => {
+        const ans = normalizeAnswer(byId(`exam-${i}`).value);
+        if (ans === normalizeAnswer(item.a)) score += 20;
+      });
+
+      const scores = storage.getScores();
+      scores[phone] = score;
+      storage.setScores(scores);
+      refreshAttendanceTable();
+
+      const approved = score >= PASSING_SCORE;
+      showMsg('examMsg', `Nota final: ${score}. ${approved ? 'Aprobado.' : 'Desaprobado, vuelva a intentarlo.'}`, approved);
+    });
+
+    function buildCertificateText(name, score) {
+      return [
+        'NUTRICION ASISTENTE IA - CERTIFICADO',
+        'Área de Calidad | Servicio de Nutrición del Hospital HNERM',
+        '',
+        `Se certifica que: ${name}`,
+        'ha aprobado satisfactoriamente los módulos de calidad, inocuidad y nutrición.',
+        `Nota final: ${score}`,
+        'Logos institucionales: NutriHuacho.Corp y Área de Calidad (Supervisor(a)).',
+        '',
+        `Fecha: ${new Date().toLocaleDateString('es-PE')}`,
+        '',
+        'Elaborado por: Lic. Carlos Paul Bazo Quesquen, CNP 5937',
+        'Correo: carlosp.bazo@gmail.com | Celular: 992341818'
+      ];
+    }
+
+    function downloadSimplePdf(lines, fileName) {
+      const escapePdf = (str) => str.replace(/[\\()]/g, '\\$&');
+      const maxLinesPerPage = 40;
+      const leftMargin = 50;
+      const topMargin = 760;
+      const lineHeight = 18;
+      const safeLines = lines.slice(0, maxLinesPerPage);
+      const body = safeLines.map((l, i) => `BT /F1 12 Tf ${leftMargin} ${topMargin - i * lineHeight} Td (${escapePdf(l)}) Tj ET`).join('\n');
+      const objects = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Count 1 /Kids [3 0 R] >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+        `<< /Length ${body.length} >>\nstream\n${body}\nendstream`
+      ];
+      let pdf = '%PDF-1.4\n';
+      const offsets = [0];
+      objects.forEach((obj, idx) => {
+        offsets.push(pdf.length);
+        pdf += `${idx + 1} 0 obj\n${obj}\nendobj\n`;
+      });
+      const xrefStart = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n`;
+      pdf += '0000000000 65535 f \n';
+      for (let i = 1; i <= objects.length; i += 1) {
+        pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+      }
+      pdf += `trailer\n<< /Root 1 0 R /Size ${objects.length + 1} >>\nstartxref\n${xrefStart}\n%%EOF`;
+      const blob = new Blob([pdf], { type: 'application/pdf' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    byId('downloadCertificateBtn').addEventListener('click', () => {
+      const phone = currentParticipantPhone();
+      const attendance = storage.getAttendance();
+      const person = attendance.find(p => p.phone === phone);
+      const score = storage.getScores()[phone];
+
+      if (!person) {
+        byId('certificatePreview').textContent = 'Debe registrar asistencia primero.';
+        return;
+      }
+      if ((score ?? 0) < PASSING_SCORE) {
+        byId('certificatePreview').textContent = `Debe aprobar el examen final (mínimo ${PASSING_SCORE}) para emitir certificado.`;
+        return;
+      }
+
+      const lines = buildCertificateText(person.name, score);
+      byId('certificatePreview').textContent = `Certificado listo para ${person.name} con nota ${score}.`;
+      downloadSimplePdf(lines, `certificado-${person.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+    });
+
+    byId('unlockAdminBtn').addEventListener('click', () => {
+      const pin = safe(byId('adminPin').value);
+      if (pin === '1206') {
+        byId('adminPanel').style.display = 'block';
+        refreshAttendanceTable();
+      } else {
+        alert('PIN administrador incorrecto.');
+      }
+    });
+
+    byId('generatePinBtn').addEventListener('click', () => {
+      const phone = safe(byId('pinPhone').value);
+      if (!PHONE_REGEX.test(phone)) {
+        showMsg('pinMsg', 'Ingrese un celular válido de 9 dígitos.', false);
+        return;
+      }
+      const randomSixDigits = () => {
+      if (window.crypto && window.crypto.getRandomValues) {
+          const arr = new Uint32Array(1);
+          const maxUnbiased = Math.floor(0x100000000 / 900000) * 900000;
+          let value = 0;
+          do {
+            window.crypto.getRandomValues(arr);
+            value = arr[0];
+          } while (value >= maxUnbiased);
+          return (100000 + (value % 900000)).toString();
+        }
+        return (100000 + Math.floor(Math.random() * 900000)).toString();
+      };
+      const pin = randomSixDigits();
+      const pins = storage.getPins();
+      pins[phone] = pin;
+      storage.setPins(pins);
+      showMsg('pinMsg', `PIN generado para ${phone}: ${pin}`, true);
+    });
+
+    byId('downloadReportBtn').addEventListener('click', () => {
+      const attendance = storage.getAttendance();
+      const scores = storage.getScores();
+      const header = ['Nombre completo', 'Tipo', 'Área', 'Celular', 'Nota'];
+      const rows = attendance.map(p => [p.name, p.role, p.area, p.phone, scores[p.phone] ?? 'Pendiente']);
+      const allRows = [header, ...rows];
+      const csvLines = allRows.map(row => row.map(col => `"${String(col).replace(/"/g, '""')}"`).join(','));
+      const csv = csvLines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'reporte_asistencia_auditoria.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    function nutribotReply(text) {
+      const n = normalizeAndRemoveDiacritics(text);
+      if (!n) return 'Por favor escribe una consulta.';
+      if (/(imagen|dibujo|foto|grafico)/.test(n)) {
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='160'><rect width='100%' height='100%' fill='#f4f8ff'/><text x='20' y='45' font-size='20' fill='#0d6efd'>Nutribot</text><text x='20' y='80' font-size='14' fill='#1f2a37'>Infografía: higiene, calidad e inocuidad</text><circle cx='290' cy='80' r='42' fill='#ff4f9a'/></svg>`;
+        const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        byId('imageResult').innerHTML = `<p class='small'>Imagen generada:</p><img src='${url}' alt='Imagen Nutribot' style='max-width:100%;border:1px solid #d7dfeb;border-radius:8px;'/><a download='nutribot-imagen.svg' href='${url}'><button type='button' class='ghost'>Descargar imagen</button></a>`;
+        return 'Listo ✅ generé una imagen resumida del módulo solicitado.';
+      }
+      if (/(calidad|auditoria|norma|resolucion)/.test(n)) return 'Para calidad, revisa NTS DIGESA/MINSA, R.M. sanitarias y lineamientos de auditoría documental.';
+      if (/(inocuidad|haccp|contaminacion)/.test(n)) return 'En inocuidad aplica BPM + HACCP: identifica peligros, puntos críticos, límites y registros.';
+      if (/(nutricion|dieta|aliment)/.test(n)) return 'En nutrición, prioriza balance energético, micronutrientes críticos y adecuación clínica por paciente.';
+      if (/(digesa|minsa)/.test(n)) return 'DIGESA y MINSA establecen lineamientos sanitarios para manipulación de alimentos y control documentado.';
+      return 'Puedo ayudarte con calidad, inocuidad, nutrición, normas técnicas y preparación para el examen final.';
+    }
+
+    byId('sendChatBtn').addEventListener('click', () => {
+      const input = byId('chatInput');
+      const text = safe(input.value);
+      if (!text) return;
+      const box = byId('chatBox');
+      const user = document.createElement('div');
+      user.className = 'bubble user';
+      user.textContent = `Tú: ${text}`;
+      box.appendChild(user);
+      const bot = document.createElement('div');
+      bot.className = 'bubble bot';
+      bot.textContent = `Nutribot: ${nutribotReply(text)}`;
+      box.appendChild(bot);
+      box.scrollTop = box.scrollHeight;
+      input.value = '';
+    });
+
+    byId('gradeTriviaBtn').addEventListener('click', () => {
+      let score = 0;
+      triviaQuestions.forEach((t, i) => {
+        if (normalizeAnswer(byId(`trivia-${i}`).value) === normalizeAnswer(t.a)) score += 1;
+      });
+      const pass = score >= 2;
+      showMsg('triviaMsg', `Resultado trivia: ${score}/${triviaQuestions.length}. ${pass ? '¡Bien hecho!' : 'Sigue practicando.'}`, pass);
+    });
+
+    byId('closeAppBtn').addEventListener('click', () => {
+      byId('closingScreen').style.display = 'flex';
+    });
+
+    renderModules();
+    renderExam();
+    renderTrivia();
+    refreshAttendanceTable();
+  </script>
+</body>
+</html>
