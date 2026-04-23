@@ -125,7 +125,7 @@
     <h1>🍏 Nutricion Asistente IA</h1>
     <p><strong>Área de Calidad</strong></p>
     <p>Servicio de Nutrición del Hospital HNERM</p>
-    <p>© NutriHuacho.Corp</p>
+    <p>© 2026 NutriHuacho.Corp</p>
   </header>
 
   <main class="container">
@@ -203,6 +203,7 @@
 
     <section class="card">
       <h2>🔐 Panel Administrador</h2>
+      <p class="small">Acceso local con PIN funcional solicitado: 1206.</p>
       <label for="adminPin">PIN administrador</label>
       <input id="adminPin" maxlength="4" placeholder="Ingrese 1206" />
       <button id="unlockAdminBtn">Ingresar</button>
@@ -252,20 +253,30 @@
 
     const triviaQuestions = [
       { q: 'Lavado de manos mínimo recomendado (segundos):', a: '20' },
-      { q: 'Palabra clave para prevenir contaminación cruzada:', a: 'separacion' },
+      { q: 'Palabra clave para prevenir contaminación cruzada:', a: 'separación' },
       { q: 'Micronutriente relacionado con la anemia:', a: 'hierro' }
     ];
 
+    const PASSING_SCORE = 70;
+    const PHONE_REGEX = /^\d{9}$/;
     const byId = (id) => document.getElementById(id);
     const safe = (v) => (v || '').trim();
-    const normalize = (v) => safe(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalizeAndRemoveDiacritics = (v) => safe(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalizeAnswer = (v) => normalizeAndRemoveDiacritics(v).replace(/\s+/g, ' ').trim();
+    const safeJsonParse = (key, fallback) => {
+      try {
+        return JSON.parse(localStorage.getItem(key) || fallback);
+      } catch {
+        return JSON.parse(fallback);
+      }
+    };
 
     const storage = {
-      getAttendance: () => JSON.parse(localStorage.getItem('attendance') || '[]'),
+      getAttendance: () => safeJsonParse('attendance', '[]'),
       setAttendance: (v) => localStorage.setItem('attendance', JSON.stringify(v)),
-      getPins: () => JSON.parse(localStorage.getItem('specialPins') || '{}'),
+      getPins: () => safeJsonParse('specialPins', '{}'),
       setPins: (v) => localStorage.setItem('specialPins', JSON.stringify(v)),
-      getScores: () => JSON.parse(localStorage.getItem('scores') || '{}'),
+      getScores: () => safeJsonParse('scores', '{}'),
       setScores: (v) => localStorage.setItem('scores', JSON.stringify(v))
     };
 
@@ -341,7 +352,7 @@
       const phone = safe(byId('phone').value);
       const accessPin = safe(byId('accessPin').value);
 
-      if (!name || !area || !/^\d{9}$/.test(phone)) {
+      if (!name || !area || !PHONE_REGEX.test(phone)) {
         showMsg('registerMsg', 'Complete datos válidos. El celular debe tener 9 dígitos.', false);
         return;
       }
@@ -372,7 +383,7 @@
 
     byId('gradeExamBtn').addEventListener('click', () => {
       const phone = currentParticipantPhone();
-      if (!/^\d{9}$/.test(phone)) {
+      if (!PHONE_REGEX.test(phone)) {
         showMsg('examMsg', 'Ingrese su celular registrado para asociar la nota.', false);
         return;
       }
@@ -385,8 +396,8 @@
 
       let score = 0;
       examQuestions.forEach((item, i) => {
-        const ans = normalize(byId(`exam-${i}`).value);
-        if (ans.includes(item.a)) score += 20;
+        const ans = normalizeAnswer(byId(`exam-${i}`).value);
+        if (ans === normalizeAnswer(item.a)) score += 20;
       });
 
       const scores = storage.getScores();
@@ -394,7 +405,7 @@
       storage.setScores(scores);
       refreshAttendanceTable();
 
-      const approved = score >= 70;
+      const approved = score >= PASSING_SCORE;
       showMsg('examMsg', `Nota final: ${score}. ${approved ? 'Aprobado.' : 'Desaprobado, vuelva a intentarlo.'}`, approved);
     });
 
@@ -417,9 +428,32 @@
 
     function downloadSimplePdf(lines, fileName) {
       const escapePdf = (str) => str.replace(/[\\()]/g, '\\$&');
-      const body = lines.map((l, i) => `BT /F1 12 Tf 50 ${760 - i * 18} Td (${escapePdf(l)}) Tj ET`).join('\n');
-      const stream = `<< /Length ${body.length} >>\nstream\n${body}\nendstream`;
-      const pdf = `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n5 0 obj\n${stream}\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000061 00000 n \n0000000118 00000 n \n0000000243 00000 n \n0000000313 00000 n \ntrailer\n<< /Root 1 0 R /Size 6 >>\nstartxref\n${313 + stream.length + 20}\n%%EOF`;
+      const maxLinesPerPage = 40;
+      const leftMargin = 50;
+      const topMargin = 760;
+      const lineHeight = 18;
+      const safeLines = lines.slice(0, maxLinesPerPage);
+      const body = safeLines.map((l, i) => `BT /F1 12 Tf ${leftMargin} ${topMargin - i * lineHeight} Td (${escapePdf(l)}) Tj ET`).join('\n');
+      const objects = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Count 1 /Kids [3 0 R] >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+        `<< /Length ${body.length} >>\nstream\n${body}\nendstream`
+      ];
+      let pdf = '%PDF-1.4\n';
+      const offsets = [0];
+      objects.forEach((obj, idx) => {
+        offsets.push(pdf.length);
+        pdf += `${idx + 1} 0 obj\n${obj}\nendobj\n`;
+      });
+      const xrefStart = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n`;
+      pdf += '0000000000 65535 f \n';
+      for (let i = 1; i <= objects.length; i += 1) {
+        pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+      }
+      pdf += `trailer\n<< /Root 1 0 R /Size ${objects.length + 1} >>\nstartxref\n${xrefStart}\n%%EOF`;
       const blob = new Blob([pdf], { type: 'application/pdf' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -438,8 +472,8 @@
         byId('certificatePreview').textContent = 'Debe registrar asistencia primero.';
         return;
       }
-      if ((score ?? 0) < 70) {
-        byId('certificatePreview').textContent = 'Debe aprobar el examen final (mínimo 70) para emitir certificado.';
+      if ((score ?? 0) < PASSING_SCORE) {
+        byId('certificatePreview').textContent = `Debe aprobar el examen final (mínimo ${PASSING_SCORE}) para emitir certificado.`;
         return;
       }
 
@@ -460,11 +494,24 @@
 
     byId('generatePinBtn').addEventListener('click', () => {
       const phone = safe(byId('pinPhone').value);
-      if (!/^\d{9}$/.test(phone)) {
+      if (!PHONE_REGEX.test(phone)) {
         showMsg('pinMsg', 'Ingrese un celular válido de 9 dígitos.', false);
         return;
       }
-      const pin = Math.floor(100000 + Math.random() * 900000).toString();
+      const randomSixDigits = () => {
+      if (window.crypto && window.crypto.getRandomValues) {
+          const arr = new Uint32Array(1);
+          const maxUnbiased = Math.floor(0x100000000 / 900000) * 900000;
+          let value = 0;
+          do {
+            window.crypto.getRandomValues(arr);
+            value = arr[0];
+          } while (value >= maxUnbiased);
+          return (100000 + (value % 900000)).toString();
+        }
+        return (100000 + Math.floor(Math.random() * 900000)).toString();
+      };
+      const pin = randomSixDigits();
       const pins = storage.getPins();
       pins[phone] = pin;
       storage.setPins(pins);
@@ -476,7 +523,9 @@
       const scores = storage.getScores();
       const header = ['Nombre completo', 'Tipo', 'Área', 'Celular', 'Nota'];
       const rows = attendance.map(p => [p.name, p.role, p.area, p.phone, scores[p.phone] ?? 'Pendiente']);
-      const csv = [header, ...rows].map(row => row.map(col => `"${String(col).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const allRows = [header, ...rows];
+      const csvLines = allRows.map(row => row.map(col => `"${String(col).replace(/"/g, '""')}"`).join(','));
+      const csv = csvLines.join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -486,7 +535,7 @@
     });
 
     function nutribotReply(text) {
-      const n = normalize(text);
+      const n = normalizeAndRemoveDiacritics(text);
       if (!n) return 'Por favor escribe una consulta.';
       if (/(imagen|dibujo|foto|grafico)/.test(n)) {
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='360' height='160'><rect width='100%' height='100%' fill='#f4f8ff'/><text x='20' y='45' font-size='20' fill='#0d6efd'>Nutribot</text><text x='20' y='80' font-size='14' fill='#1f2a37'>Infografía: higiene, calidad e inocuidad</text><circle cx='290' cy='80' r='42' fill='#ff4f9a'/></svg>`;
@@ -521,7 +570,7 @@
     byId('gradeTriviaBtn').addEventListener('click', () => {
       let score = 0;
       triviaQuestions.forEach((t, i) => {
-        if (normalize(byId(`trivia-${i}`).value).includes(t.a)) score += 1;
+        if (normalizeAnswer(byId(`trivia-${i}`).value) === normalizeAnswer(t.a)) score += 1;
       });
       const pass = score >= 2;
       showMsg('triviaMsg', `Resultado trivia: ${score}/${triviaQuestions.length}. ${pass ? '¡Bien hecho!' : 'Sigue practicando.'}`, pass);
